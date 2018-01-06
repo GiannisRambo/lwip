@@ -43,8 +43,10 @@
 #include "lwip/opt.h"
 #include "lwip/debug.h"
 #include "lwip/stats.h"
+#include "lwip/ip_addr.h"
 #include "lwip/tcp.h"
 #include "tcpecho_raw.h"
+#include "helpers.h"
 
 #if LWIP_TCP && LWIP_CALLBACK_API
 
@@ -284,11 +286,12 @@ tcpecho_raw_accept(void *arg, struct tcp_pcb *newpcb, err_t err)
 void
 tcpecho_raw_init(void)
 {
-  tcpecho_raw_pcb = tcp_new_ip_type(IPADDR_TYPE_ANY);
+//  tcpecho_raw_pcb = tcp_new_ip_type(IPADDR_ANY);
+	tcpecho_raw_pcb = tcp_new();
   if (tcpecho_raw_pcb != NULL) {
     err_t err;
 
-    err = tcp_bind(tcpecho_raw_pcb, IP_ANY_TYPE, 7);
+    err = tcp_bind(tcpecho_raw_pcb, IPADDR_ANY, 7);
     if (err == ERR_OK) {
       tcpecho_raw_pcb = tcp_listen(tcpecho_raw_pcb);
       tcp_accept(tcpecho_raw_pcb, tcpecho_raw_accept);

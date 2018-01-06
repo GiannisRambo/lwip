@@ -31,11 +31,12 @@
 
 #include "lwip/stats.h"
 
-#include "lwip/ip4.h"
-#include "lwip/ip4_frag.h"
+#include "lwip/ip.h"
+#include "lwip/ip_addr.h"
+#include "lwip/ip_frag.h"
 #include "lwip/udp.h"
 #include "lwip/tcp.h"
-#include "netif/tapif.h"
+#include "tapif.h"
 #include "netif/etharp.h"
 
 #include "udpecho_raw.h"
@@ -50,6 +51,7 @@ int main(void)
     XGpio_DiscreteWrite(&gpio_2, 2, 0xAAAA0000);
 // ----------------------------------------------------------------------------
     // Step 1 - lwip_socket_initialization
+    XGpio_DiscreteWrite(&gpio_1, 2, 0xA00);
     XGpio_DiscreteWrite(&gpio_2, 2, 0xA00);
     struct netif netif;
     int ch;
@@ -67,22 +69,32 @@ int main(void)
     netif_set_up(&netif);
     XGpio_DiscreteWrite(&gpio_2, 2, 0xAAAA0002);
 
-    udprecho_raw_init();
+    udpecho_raw_init();
     tcpecho_raw_init();
     XGpio_DiscreteWrite(&gpio_2, 2, 0xAAAA0003);
 
 // ----------------------------------------------------------------------------
     XGpio_DiscreteWrite(&gpio_2, 2, 0xAAAA0004);
 
+    u8 var[] = {
+    0x0, 0xE0, 0xF7, 0x26, 0x3F, 0xE9, 0x8, 0x0,
+    0x20, 0x86, 0x35, 0x4B, 0x8, 0x0, 0x45, 0x0,
+    0x0, 0x26, 0xAB, 0x49, 0x40, 0x0, 0xFF, 0x11,
+    0xF7, 0x0, 0x8B, 0x85, 0xD9, 0x6E, 0x8B, 0x85,
+    0xE9, 0x2, 0x99, 0xD0, 0x4, 0x3F, 0x0, 0x12,
+    0x72, 0x28, 0x68, 0x65, 0x6C, 0x6C, 0x6F, 0x68};
+    int pkt = 0;
 	// Main Loop
 	u32 last_0 = 0;
 	u32 last_1 = 0;
 	XGpio_DiscreteWrite(&gpio_1, 2, 0x100B);
 	while(1)
     {
+		// plan is to load a packet once or twice in via tapif_select
+		// then write to gpio from udpecho_raw
         tapif_select(&netif);
 
-        sys_check_timeout();
+//        sys_check_timeout();
 
 		XGpio_DiscreteWrite(&gpio_1, 2, 0x100C);
 		// Check GPIO #1

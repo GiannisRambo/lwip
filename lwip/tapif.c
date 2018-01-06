@@ -60,7 +60,7 @@
 #include "netif/tcpdump.h"
 #endif /* LWIP_DEBUG && LWIP_TCPDUMP */
 
-#include "netif/tapif.h"
+#include "tapif.h"
 
 #define IFCONFIG_BIN "/sbin/ifconfig "
 
@@ -366,13 +366,16 @@ tapif_init(struct netif *netif)
 
 
 /*-----------------------------------------------------------------------------------*/
-#if NO_SYS
 
 int
 tapif_select(struct netif *netif)
 {
   fd_set fdset;
   int ret;
+
+  // this checks the hardware if there is a new data packet
+  // if there is it calls tapif_input
+
 //  struct timeval tv;
 //  struct tapif *tapif;
 //  u32_t msecs = sys_timeouts_sleeptime();
@@ -392,33 +395,4 @@ tapif_select(struct netif *netif)
   return ret;
 }
 
-#else /* NO_SYS */
 
-static void
-tapif_thread(void *arg)
-{
-  struct netif *netif;
-  struct tapif *tapif;
-  fd_set fdset;
-  int ret;
-
-  netif = (struct netif *)arg;
-  tapif = (struct tapif *)netif->state;
-
-  while(1) {
-    FD_ZERO(&fdset);
-    FD_SET(tapif->fd, &fdset);
-
-    /* Wait for a packet to arrive. */
-    ret = select(tapif->fd + 1, &fdset, NULL, NULL, NULL);
-
-    if(ret == 1) {
-      /* Handle incoming packet. */
-      tapif_input(netif);
-    } else if(ret == -1) {
-      perror("tapif_thread: select");
-    }
-  }
-}
-
-#endif /* NO_SYS */

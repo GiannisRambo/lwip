@@ -50,6 +50,8 @@
 #include "lwip/udp.h"
 #include "udpecho_raw.h"
 
+#include "helpers.h"
+
 #if LWIP_UDP
 
 static struct udp_pcb *udpecho_raw_pcb;
@@ -59,9 +61,12 @@ udpecho_raw_recv(void *arg, struct udp_pcb *upcb, struct pbuf *p,
                  const ip_addr_t *addr, u16_t port)
 {
   LWIP_UNUSED_ARG(arg);
+  XGpio_DiscreteWrite(&gpio_2, 2, 0xFFFFFFF00);
   if (p != NULL) {
     /* send received packet back to sender */
+	  XGpio_DiscreteWrite(&gpio_2, 2, 0xFFFFFFF01);
     udp_sendto(upcb, p, addr, port);
+    XGpio_DiscreteWrite(&gpio_2, 2, 0xFFFFFFF02);
     /* free the pbuf */
     pbuf_free(p);
   }
@@ -70,11 +75,12 @@ udpecho_raw_recv(void *arg, struct udp_pcb *upcb, struct pbuf *p,
 void
 udpecho_raw_init(void)
 {
-  udpecho_raw_pcb = udp_new_ip_type(IPADDR_TYPE_ANY);
+	udpecho_raw_pcb = udp_new();
+//  udpecho_raw_pcb = udp_new_ip_type(IPADDR_ANY);
   if (udpecho_raw_pcb != NULL) {
     err_t err;
 
-    err = udp_bind(udpecho_raw_pcb, IP_ANY_TYPE, 7);
+    err = udp_bind(udpecho_raw_pcb, IPADDR_ANY, 7);
     if (err == ERR_OK) {
       udp_recv(udpecho_raw_pcb, udpecho_raw_recv, NULL);
     } else {
